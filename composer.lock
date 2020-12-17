@@ -1,0 +1,177 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "c86103d0156edab0f2a046f956b53bf1",
+    "packages": [
+        {
+            "name": "firebase/php-jwt",
+            "version": "v5.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/firebase/php-jwt.git",
+                "reference": "feb0e820b8436873675fd3aca04f3728eb2185cb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/feb0e820b8436873675fd3aca04f3728eb2185cb",
+                "reference": "feb0e820b8436873675fd3aca04f3728eb2185cb",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=4.8 <=9"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Firebase\\JWT\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Neuman Vong",
+                    "email": "neuman+pear@twilio.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Anant Narayanan",
+                    "email": "anant@php.net",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP. Should conform to the current spec.",
+            "homepage": "https://github.com/firebase/php-jwt",
+            "keywords": [
+                "jwt",
+                "php"
+            ],
+            "time": "2020-03-25T18:49:23+00:00"
+        },
+        {
+            "name": "slim/slim",
+            "version": "2.6.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/slimphp/Slim.git",
+                "reference": "9224ed81ac1c412881e8d762755e3d76ebf580c0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/slimphp/Slim/zipball/9224ed81ac1c412881e8d762755e3d76ebf580c0",
+                "reference": "9224ed81ac1c412881e8d762755e3d76ebf580c0",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "suggest": {
+                "ext-mcrypt": "Required for HTTP cookie encryption",
+                "phpseclib/mcrypt_compat": "Polyfil for mcrypt extension"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "Slim": "."
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Josh Lockhart",
+                    "email": "info@joshlockhart.com",
+                    "homepage": "http://www.joshlockhart.com/"
+                }
+            ],
+            "description": "Slim Framework, a PHP micro framework",
+            "homepage": "http://github.com/codeguy/Slim",
+            "keywords": [
+                "microframework",
+                "rest",
+                "router"
+            ],
+            "time": "2017-01-07T12:21:41+00:00"
+        },
+        {
+            "name": "wixel/gump",
+            "version": "1.12.0",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:Wixel/GUMP.git",
+                "reference": "3c94b7c87922b1f9f5e48613eae94f2770bb836b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Wixel/GUMP/zipball/3c94b7c87922b1f9f5e48613eae94f2770bb836b",
+                "reference": "3c94b7c87922b1f9f5e48613eae94f2770bb836b",
+                "shasum": ""
+            },
+            "require": {
+                "ext-bcmath": "*",
+                "ext-iconv": "*",
+                "ext-intl": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "php": ">=7.0"
+            },
+            "require-dev": {
+                "kamermans/docblock-reflection": "^1.0",
+                "maddhatter/markdown-table": "^1.0",
+                "mockery/mockery": "^1.3",
+                "php-coveralls/php-coveralls": "^2.2",
+                "phpunit/phpunit": "^6"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "gump.class.php"
+                ],
+                "psr-4": {
+                    "GUMP\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sean Nieuwoudt",
+                    "homepage": "https://wixelhq.com"
+                },
+                {
+                    "name": "Filis Futsarov",
+                    "homepage": "https://filis.me"
+                }
+            ],
+            "description": "A fast, extensible & stand-alone PHP input validation class that allows you to validate any data.",
+            "homepage": "https://wixelhq.com/",
+            "keywords": [
+                "validate",
+                "validation",
+                "validator"
+            ],
+            "time": "2020-09-26T12:14:29+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
+}
