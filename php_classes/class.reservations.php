@@ -3,7 +3,7 @@ Class Reservations {
 
 public static function checkAvailabilityByDates($start, $end){
   $response = array();
-  $pdo = DataConnector::getConnection();
+  $pdo = Data_Connecter::get_connection();
   //first, get all reservations that conflict with those dates
   $stmt = $pdo->prepare("SELECT * FROM reservations WHERE checkin < :end AND checkout > :start");
   $stmt->bindParam(":start", $start, PDO::PARAM_STR);
@@ -27,7 +27,7 @@ public static function checkAvailabilityByDates($start, $end){
 }
 
 public static function checkConflictsByIdDate($start, $end, $spaceId ){
-    $pdo = DataConnector::getConnection();
+    $pdo = Data_Connecter::get_connection();
     //works, note the comparators are "<" and ">", not "<=" and ">=" because
     //we do allow overlap in sense that one person can checkout on the same
     //day someone checks in

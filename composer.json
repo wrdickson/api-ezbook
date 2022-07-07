@@ -1,7 +1,6 @@
 {
     "require": {
         "slim/slim": "~2.0",
-        "firebase/php-jwt": "^5.2",
-        "wixel/gump": "^1.12"
+        "firebase/php-jwt": "^6.0"
     }
 }

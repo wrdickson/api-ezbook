@@ -38,6 +38,21 @@ Class RootSpaces {
   }
 
   public static function updateRootSpace ($id, $title, $displayOrder, $childOf, $showChildren) {
+    /* 
+    *  what we need to do:
+    *  load up the all spaces array
+    *  modify the space in question with the new data
+    *  run getChildren() on everything
+    *  if it works:
+    *    save everything off
+    *  if it doesnt:
+    *    return an error
+    */
+
+    
+
+
+
     $pdo = Data_Connecter::get_connection();
     $stmt = $pdo->prepare("UPDATE root_spaces SET title = :t, display_order = :d, child_of = :c, show_children = :s WHERE id = :i");
     $stmt->bindParam(":i", $id);

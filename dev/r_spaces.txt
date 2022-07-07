@@ -1,0 +1,16 @@
+
+DROP TABLE IF EXISTS 'r_spaces';
+CREATE TABLE 'r_spaces' (
+  'id' int(11) NOT NULL AUTO_INCREMENT,
+  'space_code' text NOT NULL,
+  'space_type' int(11) NOT NULL,
+  'parent' int(11) NOT NULL,
+	'children' int(11) NOT NULL,
+  'direct_children' text NOT NULL,
+  'display_order' int(11) NOT NULL,
+  'show_children' tinyint(4) NOT NULL DEFAULT '1',
+  PRIMARY KEY ('id')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- 2020-12-18 01:18:41

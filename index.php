@@ -44,6 +44,7 @@ $app->get('/types/', 'getTypes');
 $app->get('/selectGroups/', 'getSelectGroups');
 $app->get('/reservations/', 'getReservations');
 $app->post('/reservations-start/', 'getReservationsFromStart');
+$app->get('/availability/:start/:end', 'getAvailabilityByDates');
 
 // DEVELOPMENT
 $app->get('/devSpaceCode/', 'appDevSpaceCode');
@@ -173,6 +174,14 @@ function deleteRootSpace () {
   print json_encode($response);
 }
 
+function getAvailabilityByDates ($start, $end) {
+  $response = array();
+  $response['start'] = $start;
+  $response['end'] = $end;
+  $response['availability'] = Reservations::checkAvailabilityByDates($start, $end);
+  print json_encode($response);
+}
+
 function getReservations () {
   $app = \Slim\Slim::getInstance();
   $pdo = Data_Connecter::get_connection();
@@ -232,9 +241,10 @@ function getReservationsFromStart () {
 
 function getRootSpaces () {
   $app = \Slim\Slim::getInstance();
-  $jwt = $app->request->headers->get('jwt');
+  //  $jwt = $app->request->headers->get('jwt');
   $response = array();
   //  authenticate the token
+  /*
   $validate = Jwt_Util::validate_token($jwt);
   if($validate['token_error'] != null){
     $response['authenticated'] = false;
@@ -244,6 +254,8 @@ function getRootSpaces () {
     $response['auth_error'] = null;
     $response['root_spaces'] = RootSpaces::getRootSpaces();
   }
+  */
+  $response['root_spaces'] = RootSpaces::getRootSpaces();
 
   print json_encode($response);
 }

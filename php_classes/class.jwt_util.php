@@ -1,13 +1,14 @@
 <?php
 
 use \Firebase\JWT\JWT;
+use \Firebase\JWT\Key;
 
 Class Jwt_Util {
 
   public static function generate($accountId) {
     $account = new Account($accountId);
     $payload = [
-      'iat' => date("Y-m-d H:m:s", time()),
+      'iat' => time(),
       'iss' => 'localhost',
       'exp' => time() + 86400,
       //  'exp' => time(),
@@ -15,14 +16,14 @@ Class Jwt_Util {
       'accountId' => $accountId,
       'account' => $account->to_array_secure()
     ];
-    $token = JWT::encode($payload, JWT_KEY);
+    $token = JWT::encode($payload, JWT_KEY, 'HS256');
     return $token;
   }
 
   public static function validate_token($token) {
     try{
       $test = array();
-      $test['decoded']= JWT::decode($token, JWT_KEY, array('HS256'));
+      $test['decoded']= JWT::decode($token, new Key(JWT_KEY, 'HS256'));
       $test['token_error'] = null;
     } catch (Exception $e){
       $test = array();
