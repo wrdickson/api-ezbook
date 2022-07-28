@@ -10,7 +10,7 @@ Class Folio{
   private $payments;
   
   public function __construct($id){
-    $pdo = DataConnector::getConnection();
+    $pdo = Data_Connecter::get_connection();
     //first get the basics: id, customer, reservation
     $stmt = $pdo->prepare("SELECT * FROM folios WHERE id = :id");
     $stmt->bindParam(":id", $id, PDO::PARAM_INT);
@@ -22,11 +22,14 @@ Class Folio{
       
     }
     //second, get the sales (charges)
+    /*
     $this->sales = Sale::loadSalesByFolioId($id);
-    //$this->sales = json_decode( '[{"a":"1"}]' );
+    */
 
     //payments
+    /*
     $this->payments = Payment::getPaymentsByFolioId($id);
+    */
   }
 
   public function get_id(){

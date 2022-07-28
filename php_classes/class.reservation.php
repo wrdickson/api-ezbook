@@ -16,7 +16,7 @@ Class Reservation{
   public $customer_obj;
 
   public function __construct($id){
-    $pdo = DataConnector::getConnection();
+    $pdo = Data_Connecter::get_connection();
     $stmt = $pdo->prepare("SELECT * FROM reservations WHERE id = :id");
     $stmt->bindParam(":id", $id, PDO::PARAM_INT);
     $stmt->execute();
@@ -68,6 +68,39 @@ Class Reservation{
   public function checkout(){
     $this->status = 4;
     return $this->update_to_db();
+  }
+  
+  public static function createReservation( $checkin, $checkout, $customer, $spaceId, $people, $beds ){
+    $response = array();
+    //  make damn sure there is not a comflict
+
+    //  generate the space code
+    $childrenArr = RootSpaces::getRootSpaceChildren( $spaceId );
+    if(count($childrenArr) > 0){
+      $spaceCode = $spaceId . ',' . implode(',',$childrenArr);
+    } else {
+      $spaceCode = $spaceId;
+    }
+    $response['space_code'] = $spaceCode;
+
+    //  add to db
+    $pdo = Data_Connecter::get_connection();
+    $stmt = $pdo->prepare("INSERT INTO reservations (space_code, space_id, checkin, checkout, customer, people, beds, folio, history, status, notes) VALUES (:sc, :si, :ci, :co, :cus, :ppl, :bds, '0', '{}', '0', '{}')");
+    $stmt->bindParam(":sc", $spaceCode);
+    $stmt->bindParam(":si", $spaceId);
+    $stmt->bindParam(":ci", $checkin);
+    $stmt->bindParam(":co", $checkout);
+    $stmt->bindParam(":cus", $customer);
+    $stmt->bindParam(":ppl", $people);
+    $stmt->bindParam(":bds", $beds);
+    $execute = $stmt->execute();
+    $id = $pdo->lastInsertId();
+    $response['execute'] = $execute;
+    $response['newId'] = $id;
+    $newRes = new Reservation($id);
+    $response['newRes'] = $newRes->to_array();
+    //  return
+    return $response;
   }
 
   public function to_array(){
@@ -129,11 +162,6 @@ Class Reservation{
     $execute = $stmt->execute();
     $error = $stmt->errorInfo(); 
     return $execute;
-  }
-
-
-  public static function createReservation(){
-
   }
 
   public static function getReservation($id){

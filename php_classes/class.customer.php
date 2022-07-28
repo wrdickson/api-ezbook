@@ -72,7 +72,6 @@ Class Customer {
   public static function getCustomers(){
     $pdo = Data_Connecter::get_connection();
     $stmt = $pdo->prepare("SELECT * FROM customers ORDER BY lastName ASC");
-    $stmt->bindParam(":id",$id,PDO::PARAM_INT);
     $stmt->execute();
     $cArr = array();
     while($obj = $stmt->fetch(PDO::FETCH_OBJ)){

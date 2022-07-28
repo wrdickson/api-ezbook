@@ -13,15 +13,39 @@ public static function checkAvailabilityByDates($start, $end){
   $rArr = array();
   while( $obj = $stmt->fetch(PDO::FETCH_OBJ)){
     $tArr = explode(",", $obj->space_code);
-    foreach( $tArr AS $iterate){
+    foreach( $tArr as $iterate){
       array_push( $rArr, $iterate );
     }
   }
+
   //third, get an array of all space_id's
-  $allSpaceIds = Spaces::get_all_space_ids();
+  $allSpaceIds = RootSpaces::get_all_space_ids();
   //fourth, get only those from all space_ids that are
   //NOT in the array of booked id's
   $availableSpaceIds = array_diff($allSpaceIds, $rArr);
+
+  //  So far, we are failing to catch the situation where
+  //  a child item reserved should block the parent
+  //  get all root spaces with children
+  
+  //  iterate through available space_id's 
+  //  1. generate children for each one
+  //  2. if one of the children is in a reservation space code, remove it 
+
+  foreach( $availableSpaceIds as $index => $spaceId ) {
+    //  run the recursive function to get the space's children
+    $children = RootSpaces::getRootSpaceChildren($spaceId);
+    //  iterate through the children
+    foreach($children as $childSpaceId){
+      //  compare to the array we made above to include all space codes in res
+      if ( in_array( $childSpaceId, $rArr) ){
+        //  unset
+        unset($availableSpaceIds[$index]);
+      }
+    }
+  }
+
+
   $response['availableSpaceIds'] = $availableSpaceIds;
   return $response;
 }
