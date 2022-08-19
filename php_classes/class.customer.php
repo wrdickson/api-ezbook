@@ -1,16 +1,16 @@
 <?php
 Class Customer {
-  public $id;
-  public $lastName;
-  public $firstName;
-  public $address1;
-  public $address2;
-  public $city;
-  public $region;
-  public $country;
-  public $postalCode;
-  public $email;
-  public $phone;
+  private $id;
+  private $lastName;
+  private $firstName;
+  private $address1;
+  private $address2;
+  private $city;
+  private $region;
+  private $country;
+  private $postalCode;
+  private $email;
+  private $phone;
   
   public function __construct($id){
     $pdo = Data_Connecter::get_connection();

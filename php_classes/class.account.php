@@ -9,6 +9,7 @@ class Account {
     private $registered;
     private $last_login;
     private $last_activity;
+    private $is_active;
 
     public function __construct($id){
         //handle the case of a non user
@@ -21,6 +22,7 @@ class Account {
         $this->registered = 0;
         $this->last_login = 0;
         $this->last_activity = 0;
+        $this->is_active = 0;
         } else {
           //get properties from db
           $pdo = Data_Connecter::get_connection();
@@ -36,6 +38,7 @@ class Account {
             $this->registered = $obj->registered;
             $this->last_login = $obj->last_login;
             $this->last_activity = $obj->last_activity;
+            $this->is_active = (int)$obj->is_active;
           }
         }
     }
@@ -55,8 +58,6 @@ class Account {
           //  update the login
           $response['update_login'] = $account->update_login();
           $response['update_activity'] = $account->update_activity();
-          //  now reload 
-          $account = new Account($result['id']);
           $response['account'] = $account->to_array_secure();
         } else {
           $response['pass'] = false;
@@ -69,19 +70,41 @@ class Account {
       return $response;
     }
 
-    public static function create_account($username, $password, $email){
-      //  TODO validate inputs
+    public static function create_account($username, $password, $permission, $email){
       $password_hash = password_hash($password, PASSWORD_DEFAULT);
-      $permission = 10;
       $roles = '[]';
+      $is_active = 1;
       $pdo = Data_Connecter::get_connection();
-      $stmt = $pdo->prepare('INSERT INTO accounts (username, email, permission, roles, registered, last_activity, last_login, password) VALUES (:u, :e, :p, :ro, NOW(), NOW(), NOW(), :pwd)');
+      $stmt = $pdo->prepare('INSERT INTO accounts (username, email, permission, roles, registered, last_activity, last_login, is_active, password) VALUES (:u, :e, :p, :ro, NOW(), NOW(), NOW(),:ia, :pwd)');
       $stmt->bindParam(':u', $username);
       $stmt->bindParam(':e', $email);
       $stmt->bindParam(':p', $permission);
       $stmt->bindParam(':ro', $roles);
       $stmt->bindParam(':pwd', $password_hash);
+      $stmt->bindParam(':ia', $is_active);
       return $stmt->execute();
+    }
+
+    public static function get_all_accounts () {
+      $response = array();
+      $pdo = Data_Connecter::get_connection();
+      $accountsArr = array();
+      $stmt = $pdo->prepare('SELECT * FROM accounts');
+      $stmt->execute();
+      while($obj = $stmt->fetch(PDO::FETCH_OBJ)){
+        $iArr = array();
+        $iArr['id'] = $obj->id;
+        $iArr['username'] = $obj->username;
+        $iArr['email'] = $obj->email;
+        $iArr['permission'] = $obj->permission;
+        $iArr['roles'] = json_decode($obj->roles, true);
+        $iArr['registered'] = $obj->registered;
+        $iArr['last_login'] = $obj->last_login;
+        $iArr['last_activity'] = $obj->last_activity;
+        $iArr['is_active'] = $obj->is_active;
+        array_push($accountsArr, $iArr);
+      }
+      return $accountsArr;
     }
 
     public function to_array(){
@@ -94,58 +117,65 @@ class Account {
         $arr['registered'] = $this->registered;
         $arr['last_login'] = $this->last_login;
         $arr['last_activity'] = $this->last_activity;
+        $arr['is_active'] = $this->is_active;
         return $arr;
     }
 
-    //  this method does NOT return account email
+    //  this method does NOT return account email or activity
     public function to_array_secure(){
       $arr = array();
       $arr['id'] = $this->id;
       $arr['username'] = $this->username;
       $arr['permission'] = $this->permission;
       $arr['roles'] = $this->roles;
+      $arr['is_active'] = $this->is_active;
       return $arr;
   }
 
-    public function get_id() {
-        return $this->id;
-    }
+    public function set_email($email) {
+      $xid = $this->get_id();
+      $pdo = Data_Connecter::get_connection();
+      $stmt = $pdo->prepare("UPDATE accounts SET email = :newPerm WHERE id = :xid");
+      $stmt->bindParam(":newPerm", $email, PDO::PARAM_INT);
+      $stmt->bindParam(":xid", $xid, PDO::PARAM_INT);
+      $result = $stmt->execute();
+      if ($result == true){
+          $this->email = $email;
+      }
+      return $result;
+  }
 
-    public function get_username() {
-        return $this->username;
+  public function set_is_active($is_active) {
+    $xid = $this->get_id();
+    $pdo = Data_Connecter::get_connection();
+    $stmt = $pdo->prepare("UPDATE accounts SET is_active = :newP WHERE id = :xid");
+    $stmt->bindParam(":newP", $is_active, PDO::PARAM_INT);
+    $stmt->bindParam(":xid", $xid, PDO::PARAM_INT);
+    $result = $stmt->execute();
+    if ($result == true){
+        $this->is_active = $is_active;
     }
-      
-    public function get_email() {
-        return $this->email;
-    }
+    return $result;
+}
 
-    public function set_password($password) {
-      /*
-        //hash the new password
-        $password = hash('sha256', $password);
-        $xid = $this->get_id();
-        $pdo = Data_Connector::get_connection();
-        $stmt = $pdo->prepare("UPDATE users SET password = :passwd WHERE id = :xid");
-        $stmt->bindParam(":passwd", $password, PDO::PARAM_STR);
-        $stmt->bindParam(":xid", $xid, PDO::PARAM_INT);
-        $result = $stmt->execute();
-        //password is not kept on the object, so we don't need to reset
-        return $result;
-      */
+  public function set_password($password) {
+    $xid = $this->get_id();
+    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+    $pdo = Data_Connecter::get_connection();
+    $stmt = $pdo->prepare("UPDATE accounts SET password = :newP WHERE id = :xid");
+    $stmt->bindParam(":newP", $password_hash, PDO::PARAM_STR);
+    $stmt->bindParam(":xid", $xid, PDO::PARAM_INT);
+    $result = $stmt->execute();
+    if ($result == true){
+        //don't update . . .  password is NOT in properties
     }
-
-    public function get_permission() {
-      return $this->permission;
-    }
-
-    public function get_roles() {
-      return $this->roles;
-    }
+    return $result;
+  }
 
     public function set_permission($permission) {
         $xid = $this->get_id();
         $pdo = Data_Connecter::get_connection();
-        $stmt = $pdo->prepare("UPDATE account SET permission = :newPerm WHERE id = :xid");
+        $stmt = $pdo->prepare("UPDATE accounts SET permission = :newPerm WHERE id = :xid");
         $stmt->bindParam(":newPerm", $permission, PDO::PARAM_INT);
         $stmt->bindParam(":xid", $xid, PDO::PARAM_INT);
         $result = $stmt->execute();
@@ -154,11 +184,20 @@ class Account {
         }
         return $result;
     }
-      
-    public function get_registered() {
-        return $this->registered;
-    }
 
+    public function set_username($username) {
+      $xid = $this->get_id();
+      $pdo = Data_Connecter::get_connection();
+      $stmt = $pdo->prepare("UPDATE accounts SET username = :newPerm WHERE id = :xid");
+      $stmt->bindParam(":newPerm", $username, PDO::PARAM_INT);
+      $stmt->bindParam(":xid", $xid, PDO::PARAM_INT);
+      $result = $stmt->execute();
+      if ($result == true){
+          $this->username = $username;
+      }
+      return $result;
+  }
+      
     private function update_activity(){
       $pdo = Data_Connecter::get_connection();
       $stmt = $pdo->prepare("UPDATE accounts SET last_activity = NOW() WHERE id = :i");
@@ -174,4 +213,34 @@ class Account {
       $result = $stmt->execute();
       return $result;
   }
+
+  
+  public function get_email() {
+      return $this->email;
+  }
+
+  public function get_id() {
+      return $this->id;
+  }
+
+  public function get_is_active () {
+    return $this->is_active;
+  }
+
+  public function get_registered() {
+    return $this->registered;
+  }
+
+  public function get_roles() {
+    return $this->roles;
+  }
+
+  public function get_permission() {
+    return $this->permission;
+  }
+
+  public function get_username() {
+    return $this->username;
+  }
+
 }

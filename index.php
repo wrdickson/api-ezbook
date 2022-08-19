@@ -1,18 +1,20 @@
 <?php
 
-//  this is the db connection and global variable info . . . relocate up the tree for deployment
+//  this is the db connection and constant variable info . . . relocate up the tree for deployment
 require 'config/config.php';
 
 require 'php_classes/class.data_connecter.php';
 //  account
 require 'php_classes/class.account.php';
+require 'php_classes/class.jwt_authenticate.php';
 require 'php_classes/class.jwt_util.php';
+
+
 require 'php_classes/class.validate.php';
 
 //  reservation engine
 require "php_classes/class.customer.php";
 require "php_classes/class.reservations.php";
-//  require "phpClasses/class.validate.php";
 require "php_classes/class.spaces.php";
 require "php_classes/class.reservation.php";
 require "php_classes/class.folio.php";
@@ -30,10 +32,16 @@ $app = new \Slim\Slim();
 
 //  ROUTES:
 
+$app->post('/aaa/', 'aaa');
+
 $app->post('/admin/create/', 'account_create');
 
 $app->post('/account/login/', 'account_check_login');
 $app->post('/account/testtoken/', 'account_test_token');
+$app->post('/account/', 'createAccount');
+$app->post('/accounts/', 'account_get_all_accounts');
+$app->put('/accounts/:id', 'account_update_info');
+$app->put('/account-pwd/:id', 'account_update_password');
 
 //  RESERVATION ENGINE:
 $app->get('/root-spaces/', 'getRootSpaces');
@@ -51,11 +59,22 @@ $app->post('/reservations-range/', 'getReservationsFromRange');
 $app->get('/availability/:start/:end', 'getAvailabilityByDates');
 
 $app->post('/allCustomers/', 'getAllCustomers');
-
+$app->post('/search-customers/', 'searchCustomers');
+$app->post('/customers/', 'createCustomer' );
 
 
 // DEVELOPMENT
 $app->get('/devSpaceCode/', 'appDevSpaceCode');
+
+
+
+
+function aaa () {
+  $perm_required = [ 'permission' => 1, 'role' => 'account_edit_others' ];
+  $auth = new Jwt_Authenticate( $perm_required );
+  $response = $auth->to_array();
+  print json_encode($response);
+}
 
 function appDevSpaceCode () {
 
@@ -128,6 +147,28 @@ function account_check_login() {
   echo json_encode(array_merge($result, $valid));
 }
 
+function account_get_all_accounts () {
+  $app = \Slim\Slim::getInstance();
+  $jwt = $app->request->headers->get('jwt');
+  $params = json_decode($app->request->getBody(true));
+  $response = array();
+  $response['jwt'] = $jwt;
+  $validateToken = Jwt_Util::validate_token($jwt);
+  $response['validateToken'] = $validateToken;
+
+  //  decoded will be null on a failure
+  if($validateToken['decoded'] ) {
+    if($validateToken['decoded']->account->id){
+      $response['all_accounts'] = Account::get_all_accounts();
+    } else {
+      //  TODO standardize this
+    }
+  } else {}
+    
+
+  print json_encode($response);
+}
+
 function account_test_token() {
   $result = array();
   $app = \Slim\Slim::getInstance();
@@ -135,6 +176,116 @@ function account_test_token() {
   $jwt = $params->jwt;
   $test = Jwt_Util::validate_token($jwt);
   echo json_encode($test);
+}
+
+function account_update_info( $account_id ) {
+  $response = array();
+  $app = \Slim\Slim::getInstance();
+  $params = json_decode($app->request->getBody(true));
+  $jwt = $app->request->headers->get('jwt');
+  $test = Jwt_Util::validate_token($jwt);
+  $accountObj = $params->accountObj;
+  $response['accountObj'] = $accountObj;
+  // TODO  the usual validation of inputs
+  $validateToken = Jwt_Util::validate_token($jwt);
+  $response['validateToken'] = $validateToken;
+  if($validateToken['decoded']->account && $validateToken['decoded']->account->id){
+    //TODO  the usual checking of expiration,etc
+    $iAccount = new Account($accountObj->id);
+    //check for changes
+    if( $accountObj->email != $iAccount->get_email()){
+      $response['updateEmail'] = $iAccount->set_email($accountObj->email);
+    }
+    if( $accountObj->is_active != $iAccount->get_is_active()){
+      $response['updateIsActive'] = $iAccount->set_is_active($accountObj->is_active);
+    }
+    if( $accountObj->permission != $iAccount->get_permission()){
+      $response['updatePermission'] = $iAccount->set_permission($accountObj->permission);
+    }
+    $response['updatedAccount'] = $iAccount->to_array();
+    $response['allAccounts'] = Account::get_all_accounts();
+  } else {
+    //  TODO standardize this
+  }
+  echo json_encode($response);
+}
+
+function account_update_password ( $accountId ) {
+  $response = array();
+  $app = \Slim\Slim::getInstance();
+  $params = json_decode($app->request->getBody(true));
+  $jwt = $app->request->headers->get('jwt');
+  $test = Jwt_Util::validate_token($jwt);
+  $newPassword = $params->newP;
+  // TODO  the usual validation of inputs
+  $validateToken = Jwt_Util::validate_token($jwt);
+  $response['validateToken'] = $validateToken;
+  if($validateToken['decoded']->account && $validateToken['decoded']->account->id){
+    //TODO  the usual checking of expiration,etc
+
+    $iAccount = new Account($accountId);
+    $response['updatePassword'] = $iAccount->set_password($newPassword);
+    $response['updatedAccount'] = $iAccount->to_array();
+    $response['allAccounts'] = Account::get_all_accounts();
+  } else {
+    //  TODO standardize this
+  }
+  echo json_encode($response);
+}
+
+function createAccount () {
+  $app = \Slim\Slim::getInstance();
+  $jwt = $app->request->headers->get('jwt');
+  $params = json_decode($app->request->getBody(true));
+  $response = array();
+  $response['jwt'] = $jwt;
+  $newAccountObj = $params->newAccountObj;
+  $response['newAccountObj'] = $newAccountObj;
+  $validateToken = Jwt_Util::validate_token($jwt);
+  $response['validateToken'] = $validateToken;
+  if($validateToken['decoded']->account->id){
+    $response['userId'] = $validateToken['decoded']->account->id;
+    $response['permission'] = $validateToken['decoded']->account->permission;
+    $newAccountId = Account::create_account($newAccountObj->username, $newAccountObj->pwd1, $newAccountObj->permission, $newAccountObj->email);
+    $response['accountCreated'] = $newAccountId;
+  } else {
+    //  TODO standardize this
+  }
+  print json_encode($response);
+}
+
+function createCustomer () {
+  $app = \Slim\Slim::getInstance();
+  $jwt = $app->request->headers->get('jwt');
+  $params = json_decode($app->request->getBody(true));
+  $response = array();
+  $response['params'] = $params;
+  $firstName = $params->customerObject->firstName;
+  $lastName = $params->customerObject->lastName;
+  $address1 = $params->customerObject->address1;
+  $address2 = $params->customerObject->address2;
+  $city = $params->customerObject->city;
+  $region = $params->customerObject->region;
+  $postalCode = $params->customerObject->postalCode;
+  $country = $params->customerObject->country;
+  $email = $params->customerObject->email;
+  $phone = $params->customerObject->phone;
+  $response['firstName'] = $firstName;
+  //  authenticate the token
+  $authorize = Jwt_Util::validate_token($jwt);
+  if($authorize['token_error'] != null){
+    $response['authenticated'] = false;
+    $response['auth_error'] = $validate['token_error'];
+  } else {
+    $response['authenticated'] = true;
+    $response['auth_error'] = null;
+    $response['insertId'] = Customer::addCustomer($lastName, $firstName, $address1, $address2, $city, $region, $country, $postalCode, $phone, $email);
+    if($response['insertId'] && $response['insertId'] > 0) {
+      $c = new Customer($response['insertId']);
+      $response['customerObject'] = $c->dumpArray();
+    }
+  }
+  print json_encode($response);
 }
 
 function createRootSpace () {
@@ -267,7 +418,7 @@ function getAllCustomers () {
   $response['jwt'] = $jwt;
   $validate = Jwt_Util::validate_token($jwt);
   $response['validate'] = $validate;
-  if($validate['decoded'] && $validate['decoded']->accountId > 0 ){
+  if($validate['decoded'] ){
     //  we're good
     $response['customers'] = Customer::getCustomers();
   }
@@ -451,6 +602,23 @@ function getTypes(){
   $response['id'] = $app->request->params('id');
   $response['key'] = $app->request->params('key');
 
+  print json_encode($response);
+}
+
+function searchCustomers () {
+
+  $perm_required = [ 'permission' => 2, 'role' => 'customers_get' ];
+  //  if authentication fails or permissions are not met, an error will be thrown
+  $auth = new Jwt_Authenticate( $perm_required );
+  $response['auth'] = $auth->to_array();
+
+  $app = \Slim\Slim::getInstance();
+  $params = json_decode($app->request->getBody(true));
+  try {
+    $response['customer_search'] = Customer::searchCustomers($params->lastName, $params->firstName);
+  } catch ( Exception $ex ) {
+    $app->response->setStatus(500);
+  }
   print json_encode($response);
 }
 

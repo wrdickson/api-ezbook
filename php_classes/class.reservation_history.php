@@ -1,5 +1,6 @@
 <?php
 Class Reservation_History {
+  
   public $res_id;
   public $history;
 
@@ -33,7 +34,8 @@ Class Reservation_History {
     return $arr;
   }
 
-  public function update_to_db(){
+
+  private function update_to_db(){
     $res_id = $this->res_id;
     $json_history = json_encode( $this->history );
     $pdo = DataConnector::getConnection();
