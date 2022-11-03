@@ -55,8 +55,10 @@ $app->get('/types/', 'getTypes');
 $app->get('/selectGroups/', 'getSelectGroups');
 $app->get('/reservations/', 'getReservations');
 $app->post('/reservations/', 'createReservation');
+$app->put('/reservations/:resId', 'updateReservation');
 $app->post('/reservations-range/', 'getReservationsFromRange');
 $app->get('/availability/:start/:end', 'getAvailabilityByDates');
+$app->get('/availabilitynores/:start/:end/:resId', 'getAvailabilityByDatesNoRes');
 
 $app->post('/allCustomers/', 'getAllCustomers');
 $app->post('/search-customers/', 'searchCustomers');
@@ -330,8 +332,6 @@ function createReservation () {
   $people = $params->newResObj->people;
   $beds = $params->newResObj->beds;
 
-
-
   //$response['jwt'] = $jwt;
   $response['checkAvailability'] = Reservations::checkConflictsByIdDate($checkin, $checkout, $spaceId );
   $response['create'] = Reservation::createReservation($checkin, $checkout, $customer, $spaceId, $people, $beds);
@@ -433,6 +433,15 @@ function getAvailabilityByDates ($start, $end) {
   print json_encode($response);
 }
 
+function getAvailabilityByDatesNoRes ($start, $end, $resId) {
+  $response = array();
+  $response['start'] = $start;
+  $response['end'] = $end;
+  $response['resId'] = $resId;
+  $response['availability'] = Reservations::checkAvailabilityByDatesIgnoreRes($start, $end, $resId);
+  print json_encode($response);
+}
+
 function getReservations () {
   $app = \Slim\Slim::getInstance();
   $pdo = Data_Connecter::get_connection();
@@ -478,6 +487,7 @@ function getReservationsFromRange () {
     $response['auth_error'] = $validate['token_error'];
   } else {
     $response['authenticated'] = true;
+    $response['decoded'] = $validate['decoded'];
     $response['auth_error'] = null;
     //  for this request, we aren't worried about permission . . . just a valid account
     $response['startDate'] = $startDate;
@@ -622,6 +632,31 @@ function searchCustomers () {
   print json_encode($response);
 }
 
+function updateReservation ( $resId ) {
+  $app = \Slim\Slim::getInstance();
+  $perm_required = [ 'permission' => 3, 'role' => 'edit_reservations' ];
+  $auth = new Jwt_Authenticate( $perm_required );
+  $response['auth'] = $auth->to_array();
+  $params = json_decode($app->request->getBody(true));
+  $response['params'] = $params;
+
+  //  TODO make damn sure there is not a comflict
+
+  //  generate the space code
+  $childrenArr = RootSpaces::getRootSpaceChildren( $params->space_id );
+  if(count($childrenArr) > 0){
+    $space_code = $params->space_id . ',' . implode(',',$childrenArr);
+  } else {
+    $space_code = $params->space_id;
+  }
+  $response['space_code'] = $space_code;
+  $response['update1'] = Reservation::updateReservation1( $resId, $params->beds, $params->checkin, $params->checkout, $params->customer, $params->folio, $params->people, $space_code, $params->space_id, $params->status);
+  
+  
+  
+  print json_encode($response);
+}
+
 function updateRootSpace ($rootSpaceId) {
   $app = \Slim\Slim::getInstance();
   $jwt = $app->request->headers->get('jwt');
@@ -656,6 +691,7 @@ function updateRootSpace ($rootSpaceId) {
       array_push($rootSpacesWithChildrenAndParents, $rspc);
     }
     $response['rootSpacesWithChildrenAndParents'] = $rootSpacesWithChildrenAndParents;
+
 
     print json_encode($response);
   }

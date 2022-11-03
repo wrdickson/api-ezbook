@@ -46,11 +46,60 @@ public static function checkAvailabilityByDates($start, $end){
       }
     }
   }
-
-
   $response['availableSpaceIds'] = $availableSpaceIds;
   return $response;
 }
+
+public static function checkAvailabilityByDatesIgnoreRes($start, $end, $resId){
+  $response = array();
+  $pdo = Data_Connecter::get_connection();
+  //first, get all reservations that conflict with those dates
+  $stmt = $pdo->prepare("SELECT * FROM reservations WHERE checkin < :end AND checkout > :start AND id != :id");
+  $stmt->bindParam(":start", $start, PDO::PARAM_STR);
+  $stmt->bindParam(":end", $end, PDO::PARAM_STR);
+  $stmt->bindParam(":id", $resId, PDO::PARAM_INT);
+  $stmt->execute();
+  //second, get all space_id's that are booked for those dates ($rArr)
+  $rArr = array();
+  while( $obj = $stmt->fetch(PDO::FETCH_OBJ)){
+    $tArr = explode(",", $obj->space_code);
+    foreach( $tArr as $iterate){
+      if(! in_array($iterate, $rArr)) {
+        array_push( $rArr, $iterate );
+      }
+    }
+  }
+  $response['rArr'] = $rArr;
+  //third, get an array of all space_id's
+  $allSpaceIds = RootSpaces::get_all_space_ids();
+  $response['allspaceids'] = $allSpaceIds;
+  //fourth, get only those from all space_ids that are
+  //NOT in the array of booked id's
+  $availableSpaceIds = array_diff($allSpaceIds, $rArr);
+
+  //  So far, we are failing to catch the situation where
+  //  a child item reserved should block the parent
+  //  get all root spaces with children
+  
+  //  iterate through available space_id's 
+  //  1. generate children for each one
+  //  2. if one of the children is in a reservation space code, remove it 
+  foreach( $availableSpaceIds as $index => $spaceId ) {
+    //  run the recursive function to get the space's children
+    $children = RootSpaces::getRootSpaceChildren($spaceId);
+    //  iterate through the children
+    foreach($children as $childSpaceId){
+      //  compare to the array we made above to include all space codes in res
+      if ( in_array( $childSpaceId, $rArr) ){
+        //  unset
+        unset($availableSpaceIds[$index]);
+      }
+    }
+  }
+  $response['availableSpaceIds'] = $availableSpaceIds;
+  return $response;
+}
+
 
 public static function checkConflictsByIdDate($start, $end, $spaceId ){
     $pdo = Data_Connecter::get_connection();

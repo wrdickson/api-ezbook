@@ -71,15 +71,6 @@ Class RootSpaces {
         return $children;
       }
     }
-    /*
-    if( !function_exists('getSpaceCode') ) {
-      function getSpaceCode($spaceId, $rootSpaces) {
-        $children = getChildren($spaceId, $rootSpaces);
-        array_push($children, $spaceId);
-        return $children;
-      }
-    }
-    */
 
     //  get the root spaces . . .
     $rootSpaces = RootSpaces::getRootSpaces();
@@ -126,10 +117,6 @@ Class RootSpaces {
     *  if it doesnt:
     *    return an error
     */
-
-    
-
-
 
     $pdo = Data_Connecter::get_connection();
     $stmt = $pdo->prepare("UPDATE root_spaces SET title = :t, display_order = :d, child_of = :c, show_children = :s, space_type = :st, people= :p, beds = :b WHERE id = :i");

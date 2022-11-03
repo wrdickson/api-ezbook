@@ -72,7 +72,7 @@ Class Reservation{
   
   public static function createReservation( $checkin, $checkout, $customer, $spaceId, $people, $beds ){
     $response = array();
-    //  make damn sure there is not a comflict
+    //  TODO make damn sure there is not a comflict
 
     //  generate the space code
     $childrenArr = RootSpaces::getRootSpaceChildren( $spaceId );
@@ -82,23 +82,35 @@ Class Reservation{
       $spaceCode = $spaceId;
     }
     $response['space_code'] = $spaceCode;
+    try {
+      //  add to db
+      $pdo = Data_Connecter::get_connection();
+      $pdo->beginTransaction();
+      $stmt = $pdo->prepare("INSERT INTO reservations (space_code, space_id, checkin, checkout, customer, people, beds, folio, history, status, notes) VALUES (:sc, :si, :ci, :co, :cus, :ppl, :bds, '0', '{}', '0', '{}')");
+      $stmt->bindParam(":sc", $spaceCode);
+      $stmt->bindParam(":si", $spaceId);
+      $stmt->bindParam(":ci", $checkin);
+      $stmt->bindParam(":co", $checkout);
+      $stmt->bindParam(":cus", $customer);
+      $stmt->bindParam(":ppl", $people);
+      $stmt->bindParam(":bds", $beds);
+      $execute = $stmt->execute();
+      $resId = $pdo->lastInsertId();
+      $response['execute'] = $execute;
+      $response['newId'] = $resId;
 
-    //  add to db
-    $pdo = Data_Connecter::get_connection();
-    $stmt = $pdo->prepare("INSERT INTO reservations (space_code, space_id, checkin, checkout, customer, people, beds, folio, history, status, notes) VALUES (:sc, :si, :ci, :co, :cus, :ppl, :bds, '0', '{}', '0', '{}')");
-    $stmt->bindParam(":sc", $spaceCode);
-    $stmt->bindParam(":si", $spaceId);
-    $stmt->bindParam(":ci", $checkin);
-    $stmt->bindParam(":co", $checkout);
-    $stmt->bindParam(":cus", $customer);
-    $stmt->bindParam(":ppl", $people);
-    $stmt->bindParam(":bds", $beds);
-    $execute = $stmt->execute();
-    $id = $pdo->lastInsertId();
-    $response['execute'] = $execute;
-    $response['newId'] = $id;
-    $newRes = new Reservation($id);
-    $response['newRes'] = $newRes->to_array();
+      //  now create the folio
+      $folioId = Folio::create_folio( $resId, $customer );
+
+      $pdo->commit();
+    } catch ( Exception $e ) {
+      $pdo->rollBack();
+    }
+    $newRes = new Reservation($resId);
+    $newRes->folio = $folioId;
+    $newRes->update_to_db();
+    $finalRes = new Reservation($resId);
+    $response['newRes'] = $finalRes->to_array();
     //  return
     return $response;
   }
@@ -125,7 +137,7 @@ Class Reservation{
   public function update_to_db(){
     $historyJson = json_encode($this->history);
     $notesJson = json_encode($this->notes);
-    $pdo2 = DataConnector::getConnection();
+    $pdo2 = Data_Connecter::get_connection();
     $stmt = $pdo2->prepare("UPDATE reservations SET space_id = :si, space_code = :sc, checkin = :ci, checkout = :co, people = :pe, beds = :be, folio = :fo, status = :st, history = :hi, notes = :nt, customer = :cu WHERE id = :id");
     $stmt->bindParam(":si", $this->space_id, PDO::PARAM_INT);
     $stmt->bindParam(":sc", $this->space_code, PDO::PARAM_STR);
@@ -141,7 +153,7 @@ Class Reservation{
     $stmt->bindParam(":id", $this->id, PDO::PARAM_STR);
     $execute = $stmt->execute();
     $error = $stmt->errorInfo(); 
-    return $execute;    
+    return $execute;
   }
 
   public static function update_from_params( $resId, $space_id, $space_code, $checkin, $checkout, $people, $beds, $folio, $status, $history, $notes, $customer){
@@ -190,5 +202,24 @@ Class Reservation{
         $r['folio_obj'] = $folio->to_array();
 
         return $r;
+  }
+
+  public static function updateReservation1( $resId, $beds, $checkin, $checkout, $customer, $folio, $people, $space_code, $space_id, $status ){
+    $pdo = Data_Connecter::get_connection();
+    $stmt = $pdo->prepare("UPDATE reservations SET space_id = :si, space_code = :sc, checkin = :ci, checkout = :co, people = :pe, beds = :be, folio = :fo, status=:st, customer = :cu WHERE id = :id");
+    $stmt->bindParam(":si", $space_id);
+    $stmt->bindParam(":sc", $space_code);
+    $stmt->bindParam(":ci", $checkin);
+    $stmt->bindParam(":co", $checkout);
+    $stmt->bindParam(":pe", $people);
+    $stmt->bindParam(":be", $beds);
+    $stmt->bindParam(":fo", $folio);
+    $stmt->bindParam(":st", $status);
+    $stmt->bindParam(":cu", $customer);
+    $stmt->bindParam(":id", $resId);
+    $execute = $stmt->execute();
+    $error = $stmt->errorInfo(); 
+    return $execute;
+
   }
 }

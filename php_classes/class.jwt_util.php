@@ -8,7 +8,7 @@ Class Jwt_Util {
   public static function generate($accountId) {
     $account = new Account($accountId);
     $issuedAt = new DateTimeImmutable();
-    $expire = $issuedAt->modify('+1 hours')->getTimestamp();
+    $expire = $issuedAt->modify('+1 days')->getTimestamp();
     $payload = [
       'iat' => $issuedAt->getTimestamp(),  // Issued at: time when the token was generated,
       //  SERVER_NAME is a constant set in config.php
